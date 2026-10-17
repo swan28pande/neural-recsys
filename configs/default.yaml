@@ -1,0 +1,101 @@
+# Neural Collaborative Filtering - Default Configuration
+# =====================================================
+
+# Data settings
+data:
+  dataset: "ml-1m"
+  data_dir: "data/ml-1m"
+  min_interactions: 5          # Minimum interactions per user
+  implicit_threshold: 4        # Rating >= threshold -> positive (for implicit conversion)
+  neg_sample_ratio: 4          # Number of negative samples per positive
+  test_neg_samples: 99         # Negatives per positive for evaluation
+  split_method: "leave_one_out" # leave_one_out | temporal
+  val_ratio: 0.1               # Validation ratio (used in temporal split)
+  seed: 42
+
+# Model settings
+model:
+  name: "neumf"  # gmf | mlp | neumf | bpr_mf | two_tower
+
+  # Embedding dimensions
+  embed_dim: 64
+
+  # GMF settings
+  gmf:
+    embed_dim: 64
+
+  # MLP settings
+  mlp:
+    embed_dim: 64
+    hidden_layers: [256, 128, 64]
+    dropout: 0.2
+    activation: "relu"   # relu | leaky_relu | gelu
+
+  # NeuMF settings
+  neumf:
+    gmf_embed_dim: 64
+    mlp_embed_dim: 64
+    mlp_hidden_layers: [256, 128, 64]
+    dropout: 0.2
+    pretrain_gmf: null   # Path to pretrained GMF checkpoint
+    pretrain_mlp: null   # Path to pretrained MLP checkpoint
+    alpha: 0.5           # Fusion weight: alpha * GMF + (1-alpha) * MLP
+
+  # BPR-MF settings
+  bpr_mf:
+    embed_dim: 64
+    l2_reg: 0.001
+
+  # Two-Tower settings
+  two_tower:
+    user_embed_dim: 64
+    item_embed_dim: 64
+    user_hidden_layers: [128, 64]
+    item_hidden_layers: [128, 64]
+    dropout: 0.2
+    temperature: 0.07
+    similarity: "dot"    # dot | cosine
+    use_features: true   # Use auxiliary features (age, genre)
+    num_genres: 18        # MovieLens genre count
+    num_age_groups: 7     # MovieLens age group count
+
+# Training settings
+training:
+  epochs: 50
+  batch_size: 1024
+  learning_rate: 0.001
+  optimizer: "adam"       # adam | sgd | adamw
+  weight_decay: 0.0001
+  lr_scheduler: "plateau" # plateau | cosine | step | none
+  lr_patience: 5
+  lr_factor: 0.5
+  lr_min: 0.00001
+  early_stopping:
+    enabled: true
+    patience: 10
+    metric: "hr@10"       # hr@10 | ndcg@10 | mrr
+    mode: "max"           # max | min
+  gradient_clip: 1.0
+
+# Evaluation settings
+evaluation:
+  metrics: ["hr@10", "ndcg@10", "mrr", "auc"]
+  top_k: [5, 10, 20]
+  eval_batch_size: 256
+  full_ranking: true      # Full ranking vs sampled evaluation
+
+# Logging & checkpointing
+logging:
+  log_dir: "logs"
+  checkpoint_dir: "checkpoints"
+  log_every: 100          # Log every N batches
+  eval_every: 1           # Evaluate every N epochs
+  save_best: true
+  verbose: true
+
+# System
+system:
+  device: "auto"          # auto | cpu | cuda | mps
+  num_workers: 4
+  pin_memory: true
+  seed: 42
